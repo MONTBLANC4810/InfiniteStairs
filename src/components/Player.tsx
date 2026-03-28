@@ -2,38 +2,42 @@ import React from 'react';
 import { useGameStore } from '../store/gameStore';
 
 const Player: React.FC = () => {
-  const { playerDirection, climbCount } = useGameStore();
+  const { playerDirection, climbCount, status } = useGameStore();
 
-  // 플레이어의 현재 X 좌표 계산
-  // 계단이 1(오른쪽)이면 x+40, 0(왼쪽)이면 x-40
-  // 실제 위치는 climbCount 시점의 계단 누적합이 필요하지만, 
-  // 여기서는 단순히 현재 바라보는 방향에 따른 flip 효과만 먼저 구현
+  const isGameOver = status === 'gameover';
   
+  // 스프라이트 시트 설정 (3개 포즈: Idle, Climb, Turn)
+  // 생성된 이미지 가로가 길므로 3등분하여 보여줌
+  const getSpritePos = () => {
+    if (isGameOver) return '100% 0%'; // Turn 포즈를 죽었을 때 사용
+    return climbCount % 2 === 0 ? '0% 0%' : '50% 0%'; // Climb 애니메이션 시뮬레이션
+  };
+
   return (
     <div 
-      className="absolute bottom-0 left-0 w-12 h-16 transition-all duration-100 ease-out z-10"
+      className={`absolute transition-all duration-100 ease-out z-20 ${!isGameOver ? 'animate-float' : 'scale-90 opacity-50'}`}
       style={{
-        transform: `translate(-50%, -${climbCount * 40}px) scaleX(${playerDirection === 1 ? 1 : -1})`,
-        bottom: '80px', // 초기 오프셋
-        left: '50%',    // 화면 중앙 기준
+        bottom: '120px',
+        left: '50%',
+        transform: `translate(-50%, -${climbCount * 40}px) scaleX(${playerDirection === 1 ? -1 : 1})`,
+        width: '80px',
+        height: '80px',
+        filter: isGameOver ? 'grayscale(100%) brightness(0.5)' : 'none'
       }}
     >
-      {/* 캐릭터 바디 (임시 픽셀 표현) */}
-      <div className="w-full h-full bg-yellow-400 rounded-sm relative flex flex-col items-center">
-        {/* 눈 */}
-        <div className="flex space-x-2 mt-3">
-          <div className="w-2 h-2 bg-black rounded-full"></div>
-          <div className="w-2 h-2 bg-black rounded-full"></div>
-        </div>
-        {/* 입 */}
-        <div className="w-4 h-1 bg-red-600 mt-2"></div>
-        
-        {/* 다리 애니메이션 (홀수/짝수 climbCount에 따라) */}
-        <div className="absolute -bottom-2 flex space-x-4">
-          <div className={`w-3 h-4 bg-blue-500 ${climbCount % 2 === 0 ? 'translate-y-1' : ''}`}></div>
-          <div className={`w-3 h-4 bg-blue-500 ${climbCount % 2 !== 0 ? 'translate-y-1' : ''}`}></div>
-        </div>
-      </div>
+      <div 
+        className="w-full h-full bg-no-repeat bg-cover pixelated"
+        style={{ 
+          backgroundImage: `url('/src/assets/character.png')`,
+          backgroundSize: '300% 100%', // 3개의 스프라이트가 가로로 배열되어 있다고 가정
+          backgroundPosition: getSpritePos(),
+          // 흰색 배경 제거를 위한 블렌드 모드 (에셋이 흰색 배경인 경우)
+          mixBlendMode: 'multiply',
+          filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.3))'
+        }}
+      />
+      
+      {!isGameOver && <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-3 bg-black/30 rounded-full blur-[1px]" />}
     </div>
   );
 };
